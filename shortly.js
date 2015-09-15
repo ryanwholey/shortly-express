@@ -3,13 +3,15 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 
-
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 var app = express();
 
@@ -22,21 +24,38 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(cookieParser());
 
-app.get('/', 
+
+app.get('/', function(req, res) {
+  console.log('COOKIES!!: ', req.cookies);
+  res.render('login');
+});
+
+app.get('/signup', 
 function(req, res) {
-  res.render('index');
+  res.render('signup');
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  res.render('login');
 });
 
 app.get('/links', 
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
+  });
+});
+
+
+
+app.post('/signup', function(req,res){
+  res.send(req.body);
+  Users.create({
+    username: req.body.username,
+    password: req.body.password
   });
 });
 
