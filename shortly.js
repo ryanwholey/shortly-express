@@ -37,7 +37,7 @@ function(req, res) {
   res.render('signup');
 });
 
-app.get('/create', 
+app.get('/create', //authenticate <<function,
 function(req, res) {
   res.render('login');
 });
@@ -48,7 +48,6 @@ function(req, res) {
     res.send(200, links.models);
   });
 });
-
 
 
 app.post('/signup', function(req,res){
