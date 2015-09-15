@@ -10,7 +10,7 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
-var cookieParser = require('cookie-parser');
+// var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var bcrypt = require('bcrypt-nodejs');
 
@@ -19,18 +19,34 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
+
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
+
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-app.use(cookieParser());
 
+// app.use(cookieParser());
+
+app.use(session({
+  secret: 'RYAN AND BEN <3',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {}
+}))
+
+var authenticator = function(req, res, next){
+  if(req.session.user){
+    next();
+  }else{
+    res.redirect(302, 'login')
+  }
+}
 
 app.get('/', function(req, res) {
-  console.log('COOKIES!!: ', req.cookies);
-  res.render('login');
+  res.redirect(302,'/login');
 });
 
 app.get('/signup', 
@@ -38,24 +54,31 @@ function(req, res) {
   res.render('signup');
 });
 
-app.get('/create', //authenticate <<function,
-function(req, res) {
+app.get('/login', function(req, res){
   res.render('login');
 });
 
-app.get('/links', 
-function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+app.get('/index', authenticator, function(req, res){
+  res.render('index');
 });
 
-
 app.post('/signup', function(req,res){
-  res.send(req.body);
   Users.create({
     username: req.body.username,
     password: req.body.password
+  });
+  res.redirect('/login');
+});
+
+app.get('/create', authenticator,
+function(req, res) {
+  res.redirect(302,'/index');
+});
+
+app.get('/links', authenticator,
+function(req, res) {
+  Links.reset().fetch().then(function(links) {
+    res.send(200, links.models);
   });
 });
 
@@ -91,6 +114,8 @@ function(req, res) {
   });
 });
 
+
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -114,18 +139,22 @@ function(req, res) {
 
       // if the new hash equals the password in the db
       if (hash === found.attributes.password) {
-        
+        req.session.user = username;
+        // console.log(req.session);
         // then redirect to index
-        res.redirect(302, '/create')
+        res.redirect(302, 'index');
       
       // otherwise, tell visitor his login info is wrong
       } else {
-        console.log('Yo bad pw homie');
+        console.error('Yo bad pw homie');
+        
       }
 
     // tell user his login info doesnt exist
     } else {
-      console.log('Yo shit don\'t exist homie');     
+      res.redirect(420, '/login')
+      console.error('Yo shit don\'t exist homie');     
+      
     }
   });
 });
