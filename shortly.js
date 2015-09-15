@@ -12,6 +12,7 @@ var Click = require('./app/models/click');
 
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 
@@ -94,6 +95,40 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/login',  // changes to login 
+function(req, res) {
+  // capture the visitor's login info
+  var username = req.body.username;
+  var password = req.body.password;
+
+  // instantiate a new user upon clicking Login
+  // fetch info from db and compare to inputted info 
+  new User({ username: username }).fetch().then(function(found) {
+    
+    // if the login info does exist in the db
+    if (found) {
+
+      // rehash with visitor's input info + salt from the db
+      var salt = found.attributes.salt;
+      var hash = bcrypt.hashSync(password, salt);
+
+      // if the new hash equals the password in the db
+      if (hash === found.attributes.password) {
+        
+        // then redirect to index
+        res.redirect(302, '/create')
+      
+      // otherwise, tell visitor his login info is wrong
+      } else {
+        console.log('Yo bad pw homie');
+      }
+
+    // tell user his login info doesnt exist
+    } else {
+      console.log('Yo shit don\'t exist homie');     
+    }
+  });
+});
 
 
 /************************************************************/
